@@ -1,13 +1,22 @@
 "use client";
-import {InputSlider} from "@/components/InputSlider";
-import {MyLineChart} from "@/components/MyLineChart";
-import {dummyData} from "@/dummyData";
-import type {ResponseAccAnalyzerParams} from "seismic-response";
-import {Loop, UploadFile} from "@mui/icons-material";
-import {Button, ButtonGroup, Divider, Slider, Stack, styled, Typography,} from "@mui/material";
+import { InputSlider } from "@/components/InputSlider";
+import { MyLineChart } from "@/components/MyLineChart";
+import { dummyData } from "@/dummyData";
+import { Loop, UploadFile } from "@mui/icons-material";
+import {
+	Button,
+	ButtonGroup,
+	Divider,
+	Slider,
+	Stack,
+	Typography,
+	styled,
+} from "@mui/material";
 import Box from "@mui/material/Box";
-import type React, {ChangeEvent} from "react";
-import {useEffect, useState} from "react";
+import type React from "react";
+import type { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
+import type { ResponseAccAnalyzerParams } from "seismic-response";
 
 const VisuallyHiddenInput = styled("input")({
 	clip: "rect(0 0 0 0)",
@@ -25,7 +34,7 @@ const defaultStates = {
 	data: dummyData,
 	naturalPeriodStart: 1,
 	naturalPeriodOffset: 10,
-	numOfNaturalPeriods: 1000,
+	numOfNaturalPeriods: 250,
 	dt: 10,
 	mass: 100,
 	dampingH: 0.05,
@@ -82,8 +91,7 @@ export default function Home() {
 		setResAccIndex(defaultStates.resAccIndex);
 	}
 
-	useEffect(() => {
-		const timeoutId = setTimeout(() =>
+	function update() {
 		(async () => {
 			const { calc_response_acc } = await import("seismic-response");
 
@@ -120,7 +128,11 @@ export default function Home() {
 				return resAcc.reduce((acc, cur) => Math.max(acc, cur), 0);
 			});
 			setSpectrum(spectrum);
-		})(), 100);
+		})();
+	}
+
+	useEffect(() => {
+		const timeoutId = setTimeout(() => update(), 100);
 		return () => clearTimeout(timeoutId);
 	}, [
 		data,
@@ -137,8 +149,9 @@ export default function Home() {
 		initXg,
 	]);
 
-	function handleFileChange(event:ChangeEvent<HTMLInputElement>) {
+	function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.item(0);
+		console.log(file);
 		if (!file) {
 			return;
 		}
@@ -146,14 +159,18 @@ export default function Home() {
 		const reader = new FileReader();
 		reader.onload = (e) => {
 			const text = e.target?.result as string;
-			const numbers =
-				text.split("\n").map((s) => {
-					let parsed = Number.parseFloat(s)
+			const numbers = text
+				.split("\n")
+				.map((s) => {
+					const parsed = Number.parseFloat(s);
 					if (Number.isNaN(parsed)) {
 						return null;
 					}
 					return parsed;
-				}).filter((v)=>v !== null) as number[];
+				})
+				.filter((v) => v !== null) as number[];
+
+			console.log(numbers);
 
 			setData(Float64Array.from(numbers));
 		};
@@ -180,7 +197,10 @@ export default function Home() {
 								type="file"
 								accept=".csv"
 								onChange={(e) => handleFileChange(e)}
-								onClick={(e) => {e.target.value = ""}}
+								onClick={(e) => {
+									// @ts-ignore これがないと同じファイルが選択された時にchangeイベントが発火しない
+									e.target.value = "";
+								}}
 							/>
 						</Button>
 					</ButtonGroup>
@@ -299,7 +319,10 @@ export default function Home() {
 									onChange={(_, v) => setResAccIndex(v as number)}
 								/>
 							</Stack>
-							<Typography>固有周期: {naturalPeriodStart+naturalPeriodOffset*resAccIndex} [ms]</Typography>
+							<Typography>
+								固有周期:{" "}
+								{naturalPeriodStart + naturalPeriodOffset * resAccIndex} [ms]
+							</Typography>
 							<MyLineChart
 								x={time}
 								y={resAcc[resAccIndex]}

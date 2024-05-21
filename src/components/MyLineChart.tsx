@@ -1,5 +1,6 @@
 import { Download } from "@mui/icons-material";
 import {
+	Button,
 	FormControlLabel,
 	IconButton,
 	Slider,
@@ -112,7 +113,7 @@ export function MyLineChart({
 				sx={{ mt: 2 }}
 			/>
 
-			<Stack direction="row" spacing={2}>
+			<Stack direction="row" spacing={5}>
 				<FormControlLabel
 					control={
 						<Switch
@@ -133,11 +134,9 @@ export function MyLineChart({
 					}
 					label="対数軸 y"
 				/>
-				<Tooltip title={"表示範囲のCSVをダウンロード"}>
-					<IconButton onClick={() => downloadCSV()}>
-						<Download />
-					</IconButton>
-				</Tooltip>
+				<Button startIcon={<Download />} onClick={() => downloadCSV()}>
+					表示範囲のCSVをダウンロード
+				</Button>
 			</Stack>
 		</Stack>
 	);
