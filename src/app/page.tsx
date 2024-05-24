@@ -1,13 +1,22 @@
 "use client";
-import {InputSlider} from "@/components/InputSlider";
-import {MyLineChart} from "@/components/MyLineChart";
-import {dummyData} from "@/dummyData";
-import {Loop, UploadFile} from "@mui/icons-material";
-import {Button, ButtonGroup, Divider, Slider, Stack, styled, Typography,} from "@mui/material";
+import { InputSlider } from "@/components/InputSlider";
+import { MyLineChart } from "@/components/MyLineChart";
+import { dummyData } from "@/dummyData";
+import { Loop, UploadFile } from "@mui/icons-material";
+import {
+	Button,
+	ButtonGroup,
+	Divider,
+	Slider,
+	Stack,
+	Typography,
+	styled,
+} from "@mui/material";
 import Box from "@mui/material/Box";
-import type React, {ChangeEvent} from "react";
-import {useEffect, useState} from "react";
-import type {ResponseAccAnalyzerParams} from "seismic-response";
+import type React from "react";
+import type { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
+import type { ResponseAccAnalyzerParams } from "seismic-response";
 
 const VisuallyHiddenInput = styled("input")({
 	clip: "rect(0 0 0 0)",
