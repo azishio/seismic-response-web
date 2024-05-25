@@ -2,11 +2,12 @@
 import { InputSlider } from "@/components/InputSlider";
 import { MyLineChart } from "@/components/MyLineChart";
 import { dummyData } from "@/dummyData";
-import { Loop, UploadFile } from "@mui/icons-material";
+import { GitHub, Loop, UploadFile } from "@mui/icons-material";
 import {
 	Button,
 	ButtonGroup,
 	Divider,
+	Link,
 	Slider,
 	Stack,
 	Typography,
@@ -186,8 +187,13 @@ export default function Home() {
 
 	return (
 		<main>
-			<Stack marginX={5} spacing={2}>
-				<Typography variant="h2">1質点系 地震応答解析ツール</Typography>
+			<Stack marginX={5} spacing={2} style={{ userSelect: "none" }}>
+				<Typography variant="h2">
+					1質点系 地震応答解析ツール{" "}
+					<Link href={"https://github.com/azishio/seismic-response-web"}>
+						<GitHub fontSize="large" />
+					</Link>
+				</Typography>
 				<Box textAlign="right" mt={10}>
 					<ButtonGroup>
 						<Button startIcon={<Loop />} onClick={() => setDefaultStates()}>
