@@ -5,8 +5,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-	title: "Mui + Next.js Template",
-	description: "A template for Mui + Next.js projects",
+	title: "1質点系地盤応答解析ツール",
+	description: "構造物の地震応答解析と応答スペクトルを計算するツール",
 };
 
 export default function RootLayout({
