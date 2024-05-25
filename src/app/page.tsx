@@ -16,7 +16,6 @@ import Box from "@mui/material/Box";
 import type React from "react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
-import type { ResponseAccAnalyzerParams } from "seismic-response";
 
 const VisuallyHiddenInput = styled("input")({
 	clip: "rect(0 0 0 0)",
@@ -60,7 +59,6 @@ export default function Home() {
 	);
 
 	const [dt, setDt] = useState(defaultStates.dt);
-	const [mass, setMass] = useState(defaultStates.mass);
 	const [dampingH, setDampingH] = useState(defaultStates.dampingH);
 	const [rBeta, setRBeta] = useState(defaultStates.rBeta);
 	const [initX, setInitX] = useState(defaultStates.initX);
@@ -81,7 +79,6 @@ export default function Home() {
 		setNaturalPeriodOffset(defaultStates.naturalPeriodOffset);
 		setNumOfNaturalPeriods(defaultStates.numOfNaturalPeriods);
 		setDt(defaultStates.dt);
-		setMass(defaultStates.mass);
 		setDampingH(defaultStates.dampingH);
 		setRBeta(defaultStates.rBeta);
 		setInitX(defaultStates.initX);
@@ -91,48 +88,54 @@ export default function Home() {
 		setResAccIndex(defaultStates.resAccIndex);
 	}
 
-	function update() {
-		(async () => {
-			const { calc_response_acc } = await import("seismic-response");
-
-			const naturalPeriods = Array.from(
-				{ length: numOfNaturalPeriods },
-				(_, i) => naturalPeriodStart + i * naturalPeriodOffset,
-			);
-			const resAccList = naturalPeriods.map((naturalPeriod) => {
-				const params: ResponseAccAnalyzerParams = {
-					natural_period_ms: naturalPeriod,
-					dt_ms: dt,
-					mass,
-					damping_h: dampingH,
-					beta: 1 / rBeta,
-					init_x: initX,
-					init_v: initV,
-					init_a: initA,
-					init_xg: initXg,
-				};
-				return Array.from(calc_response_acc(data, params));
-			});
-
-			setTime(
-				Array.from({ length: resAccList[0].length }, (_, i) => i * (dt / 1000)),
-			);
-
-			setResAcc(resAccList);
-
-			setNaturalPeriodsSec(
-				naturalPeriods.map((naturalPeriod) => naturalPeriod / 1000),
-			);
-
-			const spectrum = resAccList.map((resAcc) => {
-				return resAcc.reduce((acc, cur) => Math.max(acc, Math.abs(cur)), 0);
-			});
-			setSpectrum(spectrum);
-		})();
-	}
-
 	useEffect(() => {
-		const timeoutId = setTimeout(() => update(), 100);
+		const timeoutId = setTimeout(
+			() =>
+				(async () => {
+					const { ResponseAccAnalyzer } = await import(
+						"seismic-response/seismic_response"
+					);
+
+					const naturalPeriods = Array.from(
+						{ length: numOfNaturalPeriods },
+						(_, i) => naturalPeriodStart + i * naturalPeriodOffset,
+					);
+					const resAccList = naturalPeriods.map((naturalPeriod) => {
+						const params = {
+							natural_period_ms: naturalPeriod,
+							dt_ms: dt,
+							damping_h: dampingH,
+							beta: 1 / rBeta,
+							init_x: initX,
+							init_v: initV,
+							init_a: initA,
+							init_xg: initXg,
+						};
+
+						const analyzer = ResponseAccAnalyzer.from_params(params);
+						return Array.from(analyzer.analyze(data));
+					});
+
+					setTime(
+						Array.from(
+							{ length: resAccList[0].length },
+							(_, i) => i * (dt / 1000),
+						),
+					);
+
+					setResAcc(resAccList);
+
+					setNaturalPeriodsSec(
+						naturalPeriods.map((naturalPeriod) => naturalPeriod / 1000),
+					);
+
+					const spectrum = resAccList.map((resAcc) => {
+						return resAcc.reduce((acc, cur) => Math.max(acc, Math.abs(cur)), 0);
+					});
+					setSpectrum(spectrum);
+				})(),
+			100,
+		);
 		return () => clearTimeout(timeoutId);
 	}, [
 		data,
@@ -140,7 +143,6 @@ export default function Home() {
 		naturalPeriodOffset,
 		numOfNaturalPeriods,
 		dt,
-		mass,
 		dampingH,
 		rBeta,
 		initX,
@@ -186,12 +188,7 @@ export default function Home() {
 						<Button startIcon={<Loop />} onClick={() => setDefaultStates()}>
 							サンプルデータをロード
 						</Button>
-						<Button
-							startIcon={<UploadFile />}
-							component="label"
-							role={undefined}
-							tabIndex={-1}
-						>
+						<Button startIcon={<UploadFile />} component="label" tabIndex={-1}>
 							ファイルをアップロード
 							<VisuallyHiddenInput
 								type="file"
@@ -221,14 +218,6 @@ export default function Home() {
 							max={1000}
 							min={1}
 							label={"時間分解能 [ms]"}
-						/>
-						<InputSlider
-							value={mass}
-							setValue={setMass}
-							max={1000}
-							step={0.1}
-							min={1}
-							label={"質量 [kg]"}
 						/>
 						<InputSlider
 							value={dampingH}
