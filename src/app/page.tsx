@@ -95,9 +95,7 @@ export default function Home() {
 		const timeoutId = setTimeout(
 			() =>
 				(async () => {
-					const { ResponseAccAnalyzer } = await import(
-						"seismic-response/seismic_response"
-					);
+					const { ResponseAccAnalyzer } = await import("seismic-response");
 
 					const naturalPeriods = Array.from(
 						{ length: numOfNaturalPeriods },
