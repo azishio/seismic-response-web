@@ -35,7 +35,7 @@ export function MyLineChart({
 	const [xLimits, setXLimits] = useState([x[0], x[x.length - 1]]);
 	useEffect(() => {
 		setXLimits([x[0], x[x.length - 1]]);
-	}, [x, y]);
+	}, [x]);
 
 	const [xLog, setXLog] = useState(false);
 	const [yLog, setYLog] = useState(false);

@@ -30,12 +30,10 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 const defaultStates = {
-	data: dummyData,
 	naturalPeriodStart: 1,
 	naturalPeriodOffset: 10,
 	numOfNaturalPeriods: 250,
 	dt: 10,
-	mass: 100,
 	dampingH: 0.05,
 	rBeta: 4,
 	initX: 0,
@@ -43,10 +41,11 @@ const defaultStates = {
 	initA: 0,
 	initXg: 0,
 	resAccIndex: 0,
+	csvColIndex: 0,
 };
 
 export default function Home() {
-	const [data, setData] = useState(defaultStates.data);
+	const [data, setData] = useState([dummyData]);
 
 	const [naturalPeriodStart, setNaturalPeriodStart] = useState(
 		defaultStates.naturalPeriodStart,
@@ -73,8 +72,11 @@ export default function Home() {
 	const [naturalPeriodsSec, setNaturalPeriodsSec] = useState<number[]>([1]);
 	const [spectrum, setSpectrum] = useState<number[]>([1]);
 
+	const [csvColIndex, setCsvColIndex] = useState<number>(
+		defaultStates.csvColIndex,
+	);
+
 	function setDefaultStates() {
-		setData(defaultStates.data);
 		setNaturalPeriodStart(defaultStates.naturalPeriodStart);
 		setNaturalPeriodOffset(defaultStates.naturalPeriodOffset);
 		setNumOfNaturalPeriods(defaultStates.numOfNaturalPeriods);
@@ -86,6 +88,7 @@ export default function Home() {
 		setInitA(defaultStates.initA);
 		setInitXg(defaultStates.initXg);
 		setResAccIndex(defaultStates.resAccIndex);
+		setCsvColIndex(defaultStates.csvColIndex);
 	}
 
 	useEffect(() => {
@@ -113,7 +116,7 @@ export default function Home() {
 						};
 
 						const analyzer = ResponseAccAnalyzer.from_params(params);
-						return Array.from(analyzer.analyze(data));
+						return Array.from(analyzer.analyze(data[csvColIndex]));
 					});
 
 					setTime(
@@ -149,32 +152,36 @@ export default function Home() {
 		initV,
 		initA,
 		initXg,
+		csvColIndex,
 	]);
 
 	function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.item(0);
-		console.log(file);
 		if (!file) {
 			return;
 		}
 
 		const reader = new FileReader();
 		reader.onload = (e) => {
+			setCsvColIndex(0);
+
 			const text = e.target?.result as string;
-			const numbers = text
+
+			const csvArray = text
 				.split("\n")
-				.map((s) => {
-					const parsed = Number.parseFloat(s);
-					if (Number.isNaN(parsed)) {
-						return null;
-					}
-					return parsed;
-				})
-				.filter((v) => v !== null) as number[];
+				.map((s) => s.split(",").map(Number.parseFloat));
 
-			console.log(numbers);
+			const columns = Array.from({ length: csvArray[0].length }, (_, i) =>
+				csvArray.map((row) => row[i]),
+			).map((v) => Float64Array.from(v).filter((v) => !Number.isNaN(v)));
 
-			setData(Float64Array.from(numbers));
+			console.log(
+				"aaa",
+				columns.map((v) => v.filter((v) => Number.isNaN(v))),
+			);
+
+			setData(columns);
+			setDefaultStates();
 		};
 		if (file instanceof Blob) reader.readAsText(file);
 	}
@@ -213,9 +220,16 @@ export default function Home() {
 				>
 					<Stack>
 						<InputSlider
+							value={csvColIndex}
+							setValue={setCsvColIndex}
+							max={data.length - 1}
+							min={0}
+							label={`参照列 [0, ${data.length - 1}]`}
+						/>
+						<InputSlider
 							value={dt}
 							setValue={setDt}
-							max={1000}
+							max={100}
 							min={1}
 							label={"時間分解能 [ms]"}
 						/>
@@ -256,7 +270,7 @@ export default function Home() {
 							value={numOfNaturalPeriods}
 							setValue={setNumOfNaturalPeriods}
 							min={2}
-							max={500}
+							max={1000}
 							label="サンプル数"
 						/>
 					</Stack>
@@ -264,29 +278,29 @@ export default function Home() {
 						<InputSlider
 							value={initX}
 							setValue={setInitX}
-							max={1000}
-							min={-1000}
+							max={100}
+							min={-100}
 							label={"初期応答変位 [m]"}
 						/>
 						<InputSlider
 							value={initV}
 							setValue={setInitV}
-							max={1000}
-							min={-1000}
+							max={100}
+							min={-100}
 							label={"初期応答速度 [m/s]"}
 						/>
 						<InputSlider
 							value={initA}
 							setValue={setInitA}
-							max={1000}
-							min={-1000}
+							max={100}
+							min={-100}
 							label={"初期応答加速度 [gal]"}
 						/>
 						<InputSlider
 							value={initXg}
 							setValue={setInitXg}
-							max={1000}
-							min={-1000}
+							max={100}
+							min={-100}
 							label={"初期地震加速度 [m]"}
 						/>
 					</Stack>
