@@ -17,6 +17,7 @@ import Box from "@mui/material/Box";
 import type React from "react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
+import type { Result } from "seismic-response";
 
 const VisuallyHiddenInput = styled("input")({
 	clip: "rect(0 0 0 0)",
@@ -41,7 +42,7 @@ const defaultStates = {
 	initV: 0,
 	initA: 0,
 	initXg: 0,
-	resAccIndex: 0,
+	resultIndex: 0,
 	csvColIndex: 0,
 };
 
@@ -67,11 +68,24 @@ export default function Home() {
 	const [initXg, setInitXg] = useState(defaultStates.initXg);
 
 	const [time, setTime] = useState<number[]>([1]);
-	const [resAcc, setResAcc] = useState<number[][]>([[1]]);
-	const [resAccIndex, setResAccIndex] = useState<number>(0);
+	const [result, setResult] = useState<Result[]>([
+		{
+			x: Float64Array.from([1]),
+			v: Float64Array.from([1]),
+			a: Float64Array.from([1]),
+			abs_acc: Float64Array.from([1]),
+			free() {},
+		},
+	]);
+	const [resultIndex, setResultIndex] = useState<number>(0);
 
 	const [naturalPeriodsSec, setNaturalPeriodsSec] = useState<number[]>([1]);
-	const [spectrum, setSpectrum] = useState<number[]>([1]);
+	const [spectrum, setSpectrum] = useState<Omit<Result, "free">>({
+		x: Float64Array.from([1]),
+		v: Float64Array.from([1]),
+		a: Float64Array.from([1]),
+		abs_acc: Float64Array.from([1]),
+	});
 
 	const [csvColIndex, setCsvColIndex] = useState<number>(
 		defaultStates.csvColIndex,
@@ -88,7 +102,7 @@ export default function Home() {
 		setInitV(defaultStates.initV);
 		setInitA(defaultStates.initA);
 		setInitXg(defaultStates.initXg);
-		setResAccIndex(defaultStates.resAccIndex);
+		setResultIndex(defaultStates.resultIndex);
 		setCsvColIndex(defaultStates.csvColIndex);
 	}
 
@@ -102,7 +116,7 @@ export default function Home() {
 						{ length: numOfNaturalPeriods },
 						(_, i) => naturalPeriodStart + i * naturalPeriodOffset,
 					);
-					const resAccList = naturalPeriods.map((naturalPeriod) => {
+					const results = naturalPeriods.map((naturalPeriod) => {
 						const params = {
 							natural_period_ms: naturalPeriod,
 							dt_ms: dt,
@@ -115,25 +129,41 @@ export default function Home() {
 						};
 
 						const analyzer = ResponseAccAnalyzer.from_params(params);
-						return Array.from(analyzer.analyze(data[csvColIndex]));
+						return analyzer.analyze(data[csvColIndex]);
 					});
 
 					setTime(
 						Array.from(
-							{ length: resAccList[0].length },
+							{ length: results[0].x.length },
 							(_, i) => i * (dt / 1000),
 						),
 					);
 
-					setResAcc(resAccList);
+					setResult(results);
 
 					setNaturalPeriodsSec(
 						naturalPeriods.map((naturalPeriod) => naturalPeriod / 1000),
 					);
 
-					const spectrum = resAccList.map((resAcc) => {
-						return resAcc.reduce((acc, cur) => Math.max(acc, Math.abs(cur)), 0);
-					});
+					const spectrum = (() => {
+						const max = results.map(({ x, v, a, abs_acc }) => ({
+							x: x.reduce((acc, cur) => Math.max(acc, cur), 0),
+							v: v.reduce((acc, cur) => Math.max(acc, cur), 0),
+							a: a.reduce((acc, cur) => Math.max(acc, cur), 0),
+							abs_acc: abs_acc.reduce(
+								(acc, cur) => Math.max(acc, Math.abs(cur)),
+								0,
+							),
+						}));
+
+						return {
+							x: Float64Array.from(max.map((v) => v.x)),
+							v: Float64Array.from(max.map((v) => v.v)),
+							a: Float64Array.from(max.map((v) => v.a)),
+							abs_acc: Float64Array.from(max.map((v) => v.abs_acc)),
+						};
+					})();
+
 					setSpectrum(spectrum);
 				})(),
 			100,
@@ -187,7 +217,7 @@ export default function Home() {
 
 	return (
 		<main>
-			<Stack marginX={5} spacing={2} style={{ userSelect: "none" }}>
+			<Stack margin={5} spacing={2} style={{ userSelect: "none" }}>
 				<Typography variant="h2">
 					1質点系 地震応答解析ツール{" "}
 					<Link href={"https://github.com/azishio/seismic-response-web"}>
@@ -312,37 +342,88 @@ export default function Home() {
 				<Divider />
 				<Stack>
 					<Stack marginX={5} spacing={5} divider={<Divider flexItem />}>
-						<Typography variant="h3">応答解析結果</Typography>
 						<Box>
-							<Stack direction="row" spacing={2}>
+							<Typography variant="h3">応答解析結果</Typography>
+							<Stack direction="row" spacing={2} alignItems="center">
 								<Typography noWrap>サンプル</Typography>
 								<Slider
 									style={{ width: "90%" }}
-									max={resAcc.length - 1}
+									max={numOfNaturalPeriods - 1}
 									min={0}
 									step={1}
-									valueLabelDisplay="auto"
-									value={resAccIndex}
-									onChange={(_, v) => setResAccIndex(v as number)}
+									valueLabelDisplay="off"
+									value={resultIndex}
+									onChange={(_, v) => setResultIndex(v as number)}
 								/>
 							</Stack>
-							<Typography>
+							<Typography alignSelf="center">
 								固有周期:{" "}
-								{naturalPeriodStart + naturalPeriodOffset * resAccIndex} [ms]
+								{naturalPeriodStart + naturalPeriodOffset * resultIndex} [ms]
 							</Typography>
-							<MyLineChart
-								x={time}
-								y={resAcc[resAccIndex]}
-								xLabel="時間 [s]"
-								yLabel="絶対応答加速度 [gal]"
-							/>
 						</Box>
+
+						<MyLineChart
+							x={time}
+							y={result[resultIndex].x}
+							xLabel="時間 [s]"
+							yLabel="応答変位 [m]"
+							title="応答変位"
+						/>
+
+						<MyLineChart
+							x={time}
+							y={result[resultIndex].v}
+							xLabel="時間 [s]"
+							yLabel="応答速度 [m/s]"
+							title="応答速度"
+						/>
+
+						<MyLineChart
+							x={time}
+							y={result[resultIndex].a}
+							xLabel="時間 [s]"
+							yLabel="応答加速度 [gal]"
+							title="応答加速度"
+						/>
+
+						<MyLineChart
+							x={time}
+							y={result[resultIndex].abs_acc}
+							xLabel="時間 [s]"
+							yLabel="絶対応答加速度 [gal]"
+							title="絶対応答加速度"
+						/>
 						<Typography variant="h3">応答スペクトル</Typography>
 						<MyLineChart
 							x={naturalPeriodsSec}
-							y={spectrum}
+							y={spectrum.x}
 							xLabel="固有周期 [s]"
-							yLabel="絶対応答加速度 [gal]"
+							yLabel="最大応答変位 [m]"
+							title="応答変位スペクトル"
+						/>
+
+						<MyLineChart
+							x={naturalPeriodsSec}
+							y={spectrum.v}
+							xLabel="固有周期 [s]"
+							yLabel="最大応答速度 [m/s]"
+							title="応答速度スペクトル"
+						/>
+
+						<MyLineChart
+							x={naturalPeriodsSec}
+							y={spectrum.a}
+							xLabel="最大固有周期 [s]"
+							yLabel="応答加速度 [gal]"
+							title="応答加速度スペクトル"
+						/>
+
+						<MyLineChart
+							x={naturalPeriodsSec}
+							y={spectrum.abs_acc}
+							xLabel="固有周期 [s]"
+							yLabel="最大絶対応答加速度 [gal]"
+							title="絶対応答加速度スペクトル"
 						/>
 					</Stack>
 				</Stack>

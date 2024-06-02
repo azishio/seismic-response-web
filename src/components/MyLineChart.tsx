@@ -2,11 +2,10 @@ import { Download } from "@mui/icons-material";
 import {
 	Button,
 	FormControlLabel,
-	IconButton,
 	Slider,
 	Stack,
 	Switch,
-	Tooltip,
+	Typography,
 } from "@mui/material";
 import {
 	ChartsClipPath,
@@ -24,11 +23,13 @@ export function MyLineChart({
 	y,
 	xLabel,
 	yLabel,
+	title,
 }: {
 	x: number[];
-	y: number[];
+	y: Float64Array;
 	xLabel: string;
 	yLabel: string;
+	title: string;
 }) {
 	const id = useId();
 	const clipPathId = `${id}-clip-path`;
@@ -70,7 +71,7 @@ export function MyLineChart({
 			<ResponsiveChartContainer
 				series={[
 					{
-						data: y,
+						data: Array.from(y),
 						type: "line",
 						showMark: false,
 					},
@@ -91,7 +92,7 @@ export function MyLineChart({
 					},
 				]}
 				height={400}
-				margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+				margin={{ top: 20, right: 20, bottom: 50, left: 100 }}
 			>
 				<ChartsGrid horizontal />
 				<g clipPath={`url(#${clipPathId})`}>
@@ -138,6 +139,15 @@ export function MyLineChart({
 					表示範囲のCSVをダウンロード
 				</Button>
 			</Stack>
+
+			<Typography
+				variant={"h4"}
+				textAlign="center"
+				marginTop={2}
+				marginBottom={1}
+			>
+				{title}
+			</Typography>
 		</Stack>
 	);
 }
