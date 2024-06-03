@@ -314,14 +314,14 @@ export default function Home() {
 							setValue={setInitX}
 							max={100}
 							min={-100}
-							label={"初期応答変位 [m]"}
+							label={"初期応答変位 [cm]"}
 						/>
 						<InputSlider
 							value={initV}
 							setValue={setInitV}
 							max={100}
 							min={-100}
-							label={"初期応答速度 [m/s]"}
+							label={"初期応答速度 [cm/s]"}
 						/>
 						<InputSlider
 							value={initA}
@@ -335,7 +335,7 @@ export default function Home() {
 							setValue={setInitXg}
 							max={100}
 							min={-100}
-							label={"初期地震加速度 [m]"}
+							label={"初期地震加速度 [cm]"}
 						/>
 					</Stack>
 				</Stack>
@@ -366,7 +366,7 @@ export default function Home() {
 							x={time}
 							y={result[resultIndex].x}
 							xLabel="時間 [s]"
-							yLabel="応答変位 [m]"
+							yLabel="応答変位 [cm]"
 							title="応答変位"
 						/>
 
@@ -374,7 +374,7 @@ export default function Home() {
 							x={time}
 							y={result[resultIndex].v}
 							xLabel="時間 [s]"
-							yLabel="応答速度 [m/s]"
+							yLabel="応答速度 [cm/s]"
 							title="応答速度"
 						/>
 
@@ -398,7 +398,7 @@ export default function Home() {
 							x={naturalPeriodsSec}
 							y={spectrum.x}
 							xLabel="固有周期 [s]"
-							yLabel="最大応答変位 [m]"
+							yLabel="最大応答変位 [cm]"
 							title="応答変位スペクトル"
 						/>
 
@@ -406,7 +406,7 @@ export default function Home() {
 							x={naturalPeriodsSec}
 							y={spectrum.v}
 							xLabel="固有周期 [s]"
-							yLabel="最大応答速度 [m/s]"
+							yLabel="最大応答速度 [cm/s]"
 							title="応答速度スペクトル"
 						/>
 
